@@ -1,9 +1,15 @@
 import { createClient } from '@/lib/supabase'
+import { createServerSupabaseClient } from '@/lib/supabase-server'
+import DownloadButton from './DownloadButton'
 
 export default async function ColoringPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params
   const supabase = createClient()
+  const serverSupabase = await createServerSupabaseClient()
+
+  const { data: { session } } = await serverSupabase.auth.getSession()
   const { data: coloring, error } = await supabase.from('colorings').select('*').eq('id', id).single()
+
   if (error || !coloring) {
     return (
       <main className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#F3EEF8' }}>
@@ -11,6 +17,7 @@ export default async function ColoringPage({ params }: { params: Promise<{ id: s
       </main>
     )
   }
+
   return (
     <main className="min-h-screen p-8" style={{ backgroundColor: '#F3EEF8' }}>
       <div className="max-w-2xl mx-auto">
@@ -32,7 +39,7 @@ export default async function ColoringPage({ params }: { params: Promise<{ id: s
                 {coloring.tags.map((tag: string) => (<span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">#{tag}</span>))}
               </div>
             )}
-            <a href={coloring.file_thumb_path} download className="mt-6 w-full py-3 rounded-full text-white font-bold text-lg block text-center" style={{ backgroundColor: '#7B4F9E' }}>Pobierz kolorowankę</a>
+            <DownloadButton coloringId={id} isLoggedIn={!!session} />
           </div>
         </div>
       </div>
