@@ -3,6 +3,17 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const ADMIN_EMAIL = 'chris.maczka@gmail.com'
 
+function toSlug(name: string) {
+  return name
+    .toLowerCase()
+    .trim()
+    .replace(/ą/g, 'a').replace(/ć/g, 'c').replace(/ę/g, 'e')
+    .replace(/ł/g, 'l').replace(/ń/g, 'n').replace(/ó/g, 'o')
+    .replace(/ś/g, 's').replace(/ź/g, 'z').replace(/ż/g, 'z')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '')
+}
+
 async function checkAdmin() {
   const supabase = await createServerSupabaseClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -14,25 +25,27 @@ export async function POST(request: NextRequest) {
   const supabase = await checkAdmin()
   if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { name } = await request.json()
-  const { data: theme, error } = await supabase.from('themes').insert({ name }).select().single()
+  const slug = toSlug(name)
+  const { data: skill, error } = await supabase.from('skill_types').insert({ name, slug }).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ theme })
+  return NextResponse.json({ skill })
 }
 
 export async function PUT(request: NextRequest) {
   const supabase = await checkAdmin()
   if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id, name } = await request.json()
-  const { data: theme, error } = await supabase.from('themes').update({ name }).eq('id', id).select().single()
+  const slug = toSlug(name)
+  const { data: skill, error } = await supabase.from('skill_types').update({ name, slug }).eq('id', id).select().single()
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json({ theme })
+  return NextResponse.json({ skill })
 }
 
 export async function DELETE(request: NextRequest) {
   const supabase = await checkAdmin()
   if (!supabase) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   const { id } = await request.json()
-  const { error } = await supabase.from('themes').delete().eq('id', id)
+  const { error } = await supabase.from('skill_types').delete().eq('id', id)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   return NextResponse.json({ success: true })
 }
